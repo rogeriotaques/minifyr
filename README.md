@@ -5,7 +5,8 @@ A PHP script that minify CSS and JS scripts.
 You should use it in order to save bandwidth and accelerate load time for your site or web-app.
 
    [Not minified sample](http://awin.com.br/assets/css/icomoon.css) | 
-   [Minified sample](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css)
+   [Minified sample](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) | 
+   [Minified sample (force download)](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen)
 
 ## How to use
 
