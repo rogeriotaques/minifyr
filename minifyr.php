@@ -29,10 +29,14 @@
  * @uses 
  * 		minifyr.php?f=path/to/file.css ( force to download file )
  * 		minifyr.php?f=path/to/file.css&screen ( not force download )
+ * 		minifyr.php?f=path/to/file.css&screen&debug ( do not minify and not force download )
  */
 
-$am_version = '1.0 beta';
+$am_version = '1.2 beta';
 
+/**
+ * Do minify ...
+ */
 function minify( $file_path ) 
 {
 	// get file content
@@ -66,6 +70,16 @@ function minify( $file_path )
 	return trim( $content_file );
 }
 
+/**
+ * Fix all relative paths that are given into file's content.
+ * It's useful when designers provide relative paths for image or additional css files into given css file.
+ * Avoid loose reference for images set in css file.
+ */
+function path_fix( $content, $file_path )
+{
+	return preg_replace('/(\'|\"|\()(\.\.\/)/', "$1{$file_path}/$2", $content);
+}
+
 $allow = array('css','js');	// allowed file extensions
 $minified = array();		// a list of minified files
 
@@ -80,11 +94,12 @@ $screen = isset( $_GET[ 'screen' ] ) ? TRUE : FALSE;
 $files  = isset( $_GET[ 'f' ] ) ? $_GET[ 'f' ] : NULL;
 $files  = explode( ',', $files );
 $file_ext = null;
+$debug = isset( $_GET[ 'debug' ] ) ? TRUE : FALSE;
 
 foreach ($files as $file)
 {
 	$inf = pathinfo($file);
-	
+
 	// ignore file if it's invalid or was minified already.
 	// files considered invalid are: not allowed extensions or with path pointing to parent folders (../)
 	if ( !$file || !in_array( $inf['extension'], $allow ) || strpos( $inf['dirname'], '../' ) !== false || in_array($inf['basename'], $minified) )
@@ -109,9 +124,11 @@ foreach ($files as $file)
 	
 	// avoid minify it again ...
 	$minified[] = $file;
-			
+	$minified_content = !$debug ? minify( $file ) : @file_get_contents( $file );
+	$minified_content = path_fix( $minified_content, $inf['dirname'] );
+	
 	$content .= "/* File: {$file} */".PHP_EOL.PHP_EOL;
-	$content .= minify( $file ).PHP_EOL.PHP_EOL;	
+	$content .= $minified_content.PHP_EOL.PHP_EOL;	
 	
 }
 
