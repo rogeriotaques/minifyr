@@ -1,12 +1,15 @@
-# Minifyr 1.0 beta
+# Minifyr 1.2 beta
 
-A PHP script that minify CSS and JS scripts.
+A PHP script that minify and group CSS and JS scripts.
 
 You should use it in order to save bandwidth and accelerate load time for your site or web-app.
 
-   [Not minified sample](http://awin.com.br/assets/css/icomoon.css) | 
-   [Minified sample](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) | 
-   [Minified sample (force download)](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen)
+See the examples below:
+
+   [Not minified](http://awin.com.br/assets/css/icomoon.css) | 
+   [Minified](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) | 
+   [Minified (forcing download)](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) | 
+   [Debug mode](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen&debug)
 
 ## How to use
 
@@ -70,5 +73,20 @@ Just add it in the end of your query string:
 ```
 
    minifyr.php?f=assets/css/my-css-file.css&screen
+
+```
+
+### debug: void
+
+By default all given files are minifies and grouped into one unique file, but, sometimes it's necessary to debug problems with your code and debug mode is to attend it. It's really usefull when minifying javascript files.
+
+In case you'd like to get the result on debug mode, you should use the *debug* option.
+
+Just add it in the end of your query string:
+
+
+```
+
+   minifyr.php?f=assets/css/my-css-file.css&debug
 
 ```
