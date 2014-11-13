@@ -32,7 +32,7 @@
  * 		minifyr.php?f=path/to/file.css&screen&debug ( do not minify and not force download )
  */
 
-$am_version = '1.2 beta';
+$am_version = '1.4 beta';
 
 /**
  * Do minify ...
@@ -42,20 +42,20 @@ function minify( $file_path )
 	// get file content
 	$content_file = @file_get_contents( $file_path );
 	
-	// remove all comment lines
-	$content_file = preg_replace( '#//(.*)$#m', '', $content_file );
-	
 	// remove all comment blocks
 	$content_file = preg_replace( '#/\*.*?\*/#s', '', $content_file );
+		
+	// remove all comment lines
+	$content_file = preg_replace( '#//(.*)$#m', '', $content_file );
 	
 	// remove all blank spaces
 	$content_file = preg_replace( '#\s+#', ' ', $content_file );
 	
-	// adjust some missing details ...
+	// remove unecessary spaces (before|after) some signs ...
 	$content_file = str_replace( array('{ ',' {'), '{', $content_file );
 	$content_file = str_replace( array('} ',' }'), '}', $content_file );
 	$content_file = str_replace( array('( ',' ('), '(', $content_file );
-	$content_file = str_replace( array(') ',' )'), ')', $content_file );
+	$content_file = str_replace( array(' )'), ')', $content_file );
 	$content_file = str_replace( array('; ',' ;'), ';', $content_file );
 	$content_file = str_replace( array(': ',' :'), ':', $content_file );
 	$content_file = str_replace( array(', ',' ,'), ',', $content_file );
@@ -77,7 +77,10 @@ function minify( $file_path )
  */
 function path_fix( $content, $file_path )
 {
-	return preg_replace('/(\'|\"|\()(\.\.\/)/', "$1{$file_path}/$2", $content);
+	$content = preg_replace('/(\'|\"|\()(\.\.\/)/', "$1{$file_path}/$2", $content);
+	$content = preg_replace('/(url\()(\'|\"){0,1}([a-zA-Z0-9\-\_\.]+)(\.png|\.jpg|\.jpge|\.gif|\.bmp|\.PNG|\.JPG|\.JPEG|\.GIF|\.BMP])/', "$1$2{$file_path}/$3$4", $content);
+	 
+	return $content;
 }
 
 $allow = array('css','js');	// allowed file extensions
@@ -89,15 +92,23 @@ $content = '';
 
 // get settings and files to minify
 // options are:
-//   
+//   f		- Required. File or comma separated file list
+//	 screen	- Optional. Void. Forces the download of minified file.
+// 	 debug	- Optional. Void. When given, skip minification.
+
+$debug  = isset( $_GET[ 'debug' ] ) ? TRUE : FALSE;
 $screen = isset( $_GET[ 'screen' ] ) ? TRUE : FALSE;
 $files  = isset( $_GET[ 'f' ] ) ? $_GET[ 'f' ] : NULL;
 $files  = explode( ',', $files );
+
 $file_ext = null;
-$debug = isset( $_GET[ 'debug' ] ) ? TRUE : FALSE;
 
 foreach ($files as $file)
 {
+	// allow external files
+	$external = preg_match('/^external\|/', $file) ? TRUE : FALSE;
+	if ($external) $file = preg_replace('/^external\|/', '', $file); 
+	
 	$inf = pathinfo($file);
 
 	// ignore file if it's invalid or was minified already.
@@ -121,6 +132,8 @@ foreach ($files as $file)
 		$content .= "/* File: {$file} was ignored. File's extension doesn't match file type pattern. */".PHP_EOL.PHP_EOL;
 		continue;
 	}
+	
+	
 	
 	// avoid minify it again ...
 	$minified[] = $file;
