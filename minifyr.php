@@ -32,12 +32,12 @@
  * 		minifyr.php?f=path/to/file.css&screen&debug ( do not minify and not force download )
  */
 
-$am_version = '1.4 beta';
+$am_version = '1.5 beta';
 
 /**
  * Do minify ...
  */
-function minify( $file_path ) 
+function minify( $file_path, $content_type ) 
 {
 	// get file content
 	$content_file = @file_get_contents( $file_path );
@@ -54,19 +54,36 @@ function minify( $file_path )
 	// remove unecessary spaces (before|after) some signs ...
 	$content_file = str_replace( array('{ ',' {'), '{', $content_file );
 	$content_file = str_replace( array('} ',' }'), '}', $content_file );
-	$content_file = str_replace( array('( ',' ('), '(', $content_file );
-	$content_file = str_replace( array(' )'), ')', $content_file );
 	$content_file = str_replace( array('; ',' ;'), ';', $content_file );
 	$content_file = str_replace( array(': ',' :'), ':', $content_file );
 	$content_file = str_replace( array(', ',' ,'), ',', $content_file );
-	$content_file = str_replace( array('= ',' ='), '=', $content_file );
-	$content_file = str_replace( array('+ ',' +'), '+', $content_file );
-	$content_file = str_replace( array('- '), '-', $content_file );
-	$content_file = str_replace( array('* ',' *'), '*', $content_file );
-	$content_file = str_replace( array('/ ',' /'), '/', $content_file );
 	$content_file = str_replace( array('|| ',' ||'), '||', $content_file );
 	$content_file = str_replace( array('! ',' !'), '!', $content_file );
-
+    
+    // perform different ways to remove some unecesary spaces (before|after) some signs ...
+    switch( $content_type )
+    {
+        case 'css':
+    
+            $content_file = str_replace( array('( ',' ('), '(', $content_file );
+            $content_file = str_replace( array(' )'), ')', $content_file );
+            $content_file = str_replace( array('= ',' ='), '=', $content_file );
+        
+            break;
+        
+        case 'js' :
+    
+            $content_file = str_replace( array('( ',' ('), '(', $content_file );
+            $content_file = str_replace( array(' )',') '), ')', $content_file );
+            $content_file = str_replace( array('= ',' ='), '=', $content_file );
+            $content_file = str_replace( array('+ ',' +'), '+', $content_file );
+            $content_file = str_replace( array('- ',' -'), '-', $content_file );
+            $content_file = str_replace( array('* ',' *'), '*', $content_file );
+            $content_file = str_replace( array('/ ',' /'), '/', $content_file );
+        
+            break;
+    }
+    
 	return trim( $content_file );
 }
 
@@ -137,8 +154,8 @@ foreach ($files as $file)
 	
 	// avoid minify it again ...
 	$minified[] = $file;
-	$minified_content = !$debug ? minify( $file ) : @file_get_contents( $file );
-	$minified_content = path_fix( $minified_content, $inf['dirname'] );
+	$minified_content = !$debug ? minify( $file, $content_type ) : @file_get_contents( $file );
+	$minified_content = $content_type == 'css' ? path_fix( $minified_content, $inf['dirname'] ) : $minified_content;
 	
 	$content .= "/* File: {$file} */".PHP_EOL.PHP_EOL;
 	$content .= $minified_content.PHP_EOL.PHP_EOL;	
