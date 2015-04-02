@@ -90,3 +90,5 @@ Just add it in the end of your query string:
    minifyr.php?f=assets/css/my-css-file.css&debug
 
 ```
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/rogeriotaques/minifyr/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
