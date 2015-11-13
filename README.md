@@ -1,10 +1,12 @@
-# Minifyr 1.6 beta
+# Minifyr 1.8 beta
 
 A PHP script that minify and group CSS and JS scripts.
 
 You may be interested on save bandwith and reduce the load time of your website or application, then, **Minifyr** is good for you.
 
 From version 1.6 it supports external files and prevent double minification on already minified files.
+
+Many minor bugfixes from this version.
 
 See the examples below:
 

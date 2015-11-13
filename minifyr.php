@@ -32,7 +32,11 @@
  * 		minifyr.php?f=path/to/file.css&screen&debug ( do not minify and not force download )
  */
 
-$am_version = '1.6 beta';
+$am_version = '1.8';
+
+// retrieve current url in which file is being called
+$cur_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . preg_replace('/\/\//', '/', "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}");
+$cur_url = pathinfo(substr($cur_url, 0, strpos($cur_url, '?')));
 
 /**
  * Do minify ...
@@ -92,10 +96,14 @@ function minify( $file_path, $content_type )
  * It's useful when designers provide relative paths for image or additional css files into given css file.
  * Avoid loose reference for images set in css file.
  */
-function path_fix( $content, $file_path )
+function path_fix( $content, $file_path)
 {
-	$content = preg_replace('/(\'|\"|\()(\.\.\/)/', "$1{$file_path}/$2", $content);
+	// first fix path for those references without ../
 	$content = preg_replace('/(url\()(\'|\"){0,1}([a-zA-Z0-9\-\_\.]+)(\.png|\.jpg|\.jpge|\.gif|\.bmp|\.PNG|\.JPG|\.JPEG|\.GIF|\.BMP])/', "$1$2{$file_path}/$3$4", $content);
+
+	// then, remove last directory from given path to assure ../ will correctly replaced.
+	$file_path = substr($file_path, 0, strrpos($file_path, '/'));
+	$content = preg_replace('/(\.\.\/)/', "{$file_path}/$2", $content);
 
 	return $content;
 }
@@ -153,15 +161,13 @@ foreach ($files as $file)
 		continue;
 	}
 
-
-
 	// prevent double minification ...
 	$minified[] = $file;
 
 	if (!$is_minified)
 	{
-	$minified_content = !$debug ? minify( $file, $content_type ) : @file_get_contents( $file );
-	$minified_content = $content_type == 'css' ? path_fix( $minified_content, $inf['dirname'] ) : $minified_content;
+		$minified_content = !$debug ? minify( $file, $content_type ) : @file_get_contents( $file );
+		$minified_content = strpos($content_type, 'css') !== false ? path_fix( $minified_content, $cur_url['dirname'].'/'.$inf['dirname']) : $minified_content;
 	}
 	else
 	{
