@@ -10,9 +10,9 @@ From version 2.0 it was fully rewriten from a script to a class, which has a mor
 
 See the examples below:
 
-   [Not minified](http://awin.com.br/minifyr/sample.css) |
+   [Not minified](https://raw.githubusercontent.com/driftyco/ionicons/master/css/ionicons.css) |
    [Minified](http://awin.com.br/minifyr/sample.php?f=sample.css&screen) |
-   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=sample.css&screen) |
+   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=sample.css) |
    [Debug mode](http://awin.com.br/minifyr/sample.php?f=sample.css&screen&debug)
 
 ## How to use
