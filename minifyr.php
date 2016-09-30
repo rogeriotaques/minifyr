@@ -1,210 +1,296 @@
-<?php
+<?php 
 
-/**
- * Minifyr - A minifier PHP script for CSS and JS scripts.
- * Copyright (c) 2014, Rogério Taques.
- *
- * Licensed under MIT license:
- * http://www.opensource.org/licenses/mit-license.php
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this
- * software and associated documentation files (the "Software"), to deal in the Software
- * without restriction, including without limitation the rights to use, copy, modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
- * to whom the Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * @requires PHP4+
- * @author Rogério Taques (rogerio.taques@gmail.com)
- * @see https://github.com/rogeriotaques/minifyr
- *
- * @uses
- * 		minifyr.php?f=path/to/file.css ( force to download file )
- * 		minifyr.php?f=path/to/file.css&screen ( not force download )
- * 		minifyr.php?f=path/to/file.css&screen&debug ( do not minify and not force download )
- */
+namespace RT;
 
-$am_version = '1.8';
+class Minifyr {
 
-// retrieve current url in which file is being called
-$cur_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . preg_replace('/\/\//', '/', "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}");
-$cur_url = pathinfo(substr($cur_url, 0, strpos($cur_url, '?')));
+  private $_version = '2.0.0';
+  private $_path = '';
+  private $_type = '';
+  private $_extension = '';
+  private $_base_url = '';
+  private $_expires = '';
+  private $_charset = 'utf-8';
+  private $_allowed_files = array('css', 'js');
+  private $_content_types = array('css' => 'text/css', 'js' => 'text/javascript');
+  private $_minified = array();
+  private $_files = array();
+  private $_debug = false;
+  private $_screen = false;
+  private $_allow_compression = true;
+  private $_allow_cache = true;
+  private $_uglify = false;
 
-/**
- * Do minify ...
- */
-function minify( $file_path, $content_type )
-{
-	// get file content
-	$content_file = @file_get_contents( $file_path );
+  function __construct ($debug = false, $screen = false) {
+    $this->_debug = $debug;
+    $this->_screen = $screen;
 
-	// remove all comment blocks
-	$content_file = preg_replace( '#/\*.*?\*/#s', '', $content_file );
+    // retrieve current url in which file is being called
+    $this->_base_url = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . preg_replace('/\/\//', '/', "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}");
+    $this->_base_url = pathinfo(substr($this->_base_url, 0, strpos($this->_base_url, '?')));
 
-	// remove all comment lines
-	$content_file = preg_replace( '#//(.*)$#m', '', $content_file );
+    $this->_expires = gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT';
+  } // __construct
 
-	// remove all blank spaces
-	$content_file = preg_replace( '#\s+#', ' ', $content_file );
+  public function compression ( $flag = true ) {
+    $this->_allow_compression = $flag;
+    return $this;
+  } // compression
 
-	// remove unecessary spaces (before|after) some signs ...
-	$content_file = str_replace( array('{ ',' {'), '{', $content_file );
-	$content_file = str_replace( array('} ',' }'), '}', $content_file );
-	$content_file = str_replace( array('; ',' ;'), ';', $content_file );
-	$content_file = str_replace( array(': ',' :'), ':', $content_file );
-	$content_file = str_replace( array(', ',' ,'), ',', $content_file );
-	$content_file = str_replace( array('|| ',' ||'), '||', $content_file );
-	$content_file = str_replace( array('! ',' !'), '!', $content_file );
+  public function cache ( $flag = true ) {
+    $this->_allow_cache = $flag;
+    return $this;
+  } // cache
 
-    // perform different ways to remove some unecesary spaces (before|after) some signs ...
-    switch( $content_type )
-    {
-        case 'css':
+  public function uglify ( $flag = false ) {
+    $this->_uglify = $flag;
+    return $this;
+  } // uglify
 
-            $content_file = str_replace( array('( ',' ('), '(', $content_file );
-            $content_file = str_replace( array(' )'), ')', $content_file );
-            $content_file = str_replace( array('= ',' ='), '=', $content_file );
-
-            break;
-
-        case 'js' :
-
-            $content_file = str_replace( array('( ',' ('), '(', $content_file );
-            $content_file = str_replace( array(' )',') '), ')', $content_file );
-            $content_file = str_replace( array('= ',' ='), '=', $content_file );
-            $content_file = str_replace( array('+ ',' +'), '+', $content_file );
-            $content_file = str_replace( array('- ',' -'), '-', $content_file );
-            $content_file = str_replace( array('* ',' *'), '*', $content_file );
-            $content_file = str_replace( array('/ ',' /'), '/', $content_file );
-
-            break;
+  public function expires ( $time = '' ) {
+    if (!empty($time)) {
+      $this->_expires = $time;
     }
 
-	return trim( $content_file );
-}
+    return $this;
+  } // expires
 
-/**
- * Fix all relative paths that are given into file's content.
- * It's useful when designers provide relative paths for image or additional css files into given css file.
- * Avoid loose reference for images set in css file.
- */
-function path_fix( $content, $file_path)
-{
-	// first fix path for those references without ../
-	$content = preg_replace('/(url\()(\'|\"){0,1}([a-zA-Z0-9\-\_\.]+)(\.png|\.jpg|\.jpge|\.gif|\.bmp|\.PNG|\.JPG|\.JPEG|\.GIF|\.BMP])/', "$1$2{$file_path}/$3$4", $content);
+  public function charset ( $charset = '' ) {
+    if (!empty($charset)) {
+      $this->_charset = $charset;
+    }
 
-	// then, remove last directory from given path to assure ../ will correctly replaced.
-	$file_path = substr($file_path, 0, strrpos($file_path, '/'));
-	$content = preg_replace('/(\.\.\/)/', "{$file_path}/$2", $content);
+    return $this;
+  } // charset
 
-	return $content;
-}
+  public function files ( $files = array() ) {
+    if (is_array($files)) {
+      $this->_files = array_merge($this->_files, $files);
+    }
 
-$allow = array('css','js');		// allowed file extensions
-$minified = array();					// a list of minified files
+    $this->_files = array_filter($this->_files, function ($el) {
+      return !empty($el) && is_string($el);
+    });
 
-$content_types = array('css' => 'text/css', 'js' => 'text/javascript');
-$content_type  = null;
-$content = '';
+    return $this;
+  } // files 
 
-// get settings and files to minify
-// options are:
-//   f			- Required. File or comma separated file list
-//	 screen	- Optional. Void. Forces the download of minified file.
-// 	 debug	- Optional. Void. When given, skip minification.
+  public function file ( $file = '' ) {
+    if (!empty($file)) {
+      $this->_files[] = $file;
+    }
 
-$debug  = isset( $_GET[ 'debug' ] ) ? TRUE : FALSE;
-$screen = isset( $_GET[ 'screen' ] ) ? TRUE : FALSE;
-$files  = isset( $_GET[ 'f' ] ) ? $_GET[ 'f' ] : NULL;
-$files  = explode( ',', $files );
+    return $this;
+  } // file 
 
-$file_ext = null;
-$is_minified = false;
+  public function render ( $return = false ) {
 
-foreach ($files as $file)
-{
-	// allow external files
-	// whenever it's an external file, load it from its source
-	$external = preg_match('/^external\|/', $file) ? TRUE : FALSE;
-	if ($external) $file = preg_replace('/^external\|/', 'http://', $file);
+    $output = $this->run();
 
-	$inf = pathinfo($file);
-	$is_minified = strpos($inf['basename'], '.min') !== false;
+    // wants to return it as string?
+    if ($return === true) {
+      return $output;
+    }
 
-	// ignore file if it's invalid or was minified already.
-	// files considered invalid are: not allowed extensions or with path pointing to parent folders (../)
-	if ( !$file || !in_array( $inf['extension'], $allow ) || strpos( $inf['dirname'], '../' ) !== false || in_array($inf['basename'], $minified) )
-	{
-		$content .= "/* File: {$file} was ignored. It's invalid or was minified already. */".PHP_EOL.PHP_EOL;
-		continue;
-	}
+    if ($this->_allow_compression === true) {
+      // enable gzip compression
+      ob_start("ob_gzhandler");
+    }
 
-	// decide the content type according first file type.
-	if (! $content_type)
-	{
-		$content_type = $content_types[ $inf['extension'] ];
-		$file_ext = $inf['extension'];
-	}
+    if ($this->_allow_cache === true) {
+      // allow cache
+      header('Cache-Control: public');
+    }
 
-	// if extension isn't the same of first minified files, then ignore it
-	if ( $content_type != $content_type )
-	{
-		$content .= "/* File: {$file} was ignored. File's extension doesn't match file type pattern. */".PHP_EOL.PHP_EOL;
-		continue;
-	}
+    // expires in a day
+    header('Expires: ' . $this->_expires);
 
-	// prevent double minification ...
-	$minified[] = $file;
+    // Set right content-type and charset ...
+    header("Content-type: {$this->_type}; charset={$this->_charset}" );
 
-	if (!$is_minified)
-	{
-		$minified_content = !$debug ? minify( $file, $content_type ) : @file_get_contents( $file );
-		$minified_content = strpos($content_type, 'css') !== false ? path_fix( $minified_content, $cur_url['dirname'].'/'.$inf['dirname']) : $minified_content;
-	}
-	else
-	{
-		$minified_content = @file_get_contents($file);
-	}
+    if ($this->_screen === false)
+    {
+      // force file as 'downloadble file
+      header("Content-disposition: attachment; filename=minified.{$this->_extension}");
+    }
 
-	$content .= "/* File: {$file} */".PHP_EOL.PHP_EOL;
-	$content .= $minified_content.PHP_EOL.PHP_EOL;
+    $header  = '/** '.PHP_EOL;
+    $header .= " * Minifyr #v.{$this->_version} ".PHP_EOL;
+    $header .= ' * Licensed under MIT license:'.PHP_EOL;
+    $header .= ' * http://www.opensource.org/licenses/mit-license.php'.PHP_EOL;
+    $header .= ' * @author Rogerio Taques (rogerio.taques@gmail.com)'.PHP_EOL;
+    $header .= ' * @see https://github.com/rogeriotaques/minifyr'.PHP_EOL;
+    $header .= ' */'.PHP_EOL.PHP_EOL;
 
-}
+    echo "{$header}{$output}";
+    return true;
+    
+  } // render 
 
-// Enable gzip compression
-ob_start("ob_gzhandler");
+  private function run () {
+    $output = array();
 
-// Allow cache
-header('Cache-Control: public');
+    if (count($this->_files) === 0) {
+      trigger_error('Minifyr: There\'s no files to be minified!', E_WARNING);
+      exit;
+    }
 
-// Expires in a day
-header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
+    foreach ($this->_files as $file) {
+      // allow external files
+      // whenever it's an external file, load it from its source
+      $external = preg_match('/^external\|/', $file) ? TRUE : FALSE;
+      if ($external) $file = preg_replace('/^external\|/', 'http://', $file);
 
-// Set right content-type and charset ...
-header("Content-type: {$content_type}; charset=utf-8" );
+      $inf = pathinfo($file);
+      $is_minified = strpos($inf['basename'], '.min') !== false;
 
-if (! $screen)
-{
-	// force file as 'downloadble file
-	header("Content-disposition: attachment; filename=minified.{$file_ext}");
-}
+      // ignore file if it's invalid or was minified already.
+      // files considered invalid are: not allowed extensions or with path pointing to parent folders (../)
+      if ( !$file || !in_array( $inf['extension'], $this->_allowed_files ) || strpos( $inf['dirname'], '../' ) !== false || in_array($inf['basename'], $this->_minified) ) {
+        $output[] = "/* File: {$file} was ignored. It's invalid or was minified already. */".PHP_EOL.PHP_EOL;
+        continue;
+      }
 
-$header  = '/** '.PHP_EOL;
-$header .= " * Minifyr #v.{$am_version} ".PHP_EOL;
-$header .= ' * Licensed under MIT license:'.PHP_EOL;
-$header .= ' * http://www.opensource.org/licenses/mit-license.php'.PHP_EOL;
-$header .= ' * @author Rogerio Taques (rogerio.taques@gmail.com)'.PHP_EOL;
-$header .= ' * @see https://github.com/rogeriotaques/minifyr'.PHP_EOL;
-$header .= ' */'.PHP_EOL.PHP_EOL;
+      // decide the content type according first file type.
+      if (empty($this->_type)) {
+        $this->_type = $this->_content_types[ $inf['extension'] ];
+        $this->_extension = $inf['extension'];
+      }
 
-echo $header, $content;
+      // if extension isn't the same of first minified files, then ignore it
+      if ( $inf['extension'] != $this->_extension ) {
+        $output[] = "/* File: {$file} was ignored. File's extension doesn't match file type pattern. */".PHP_EOL.PHP_EOL;
+        continue;
+      }
 
-?>
+      // prevent double minification ...
+      $this->_minified[] = $file;
+      $minified_content = '';
+
+      if (!$is_minified) {
+        $minified_content = $this->_debug === false ? $this->minify( $file ) : @file_get_contents( $file );
+        $minified_content = strpos($this->_type, 'css') !== false ? $this->fix_path( $minified_content, $this->_base_url['dirname'].'/'.$inf['dirname']) : $minified_content;
+      } else {
+        $minified_content = @file_get_contents($file);
+      }
+
+      $output[] = "/* File: {$file} */".PHP_EOL.PHP_EOL;
+
+      if ($this->_uglify === true && strtolower($this->_type) === 'text/javascript') {
+        $minified_content = $this->do_uglify( $minified_content );
+      }
+
+      $output[] = $minified_content.PHP_EOL.PHP_EOL;
+    }
+
+    return implode('', $output);
+  } // run
+
+  /**
+   * Do minify ...
+   */
+  private function minify ($path = '') {
+    // get file content
+    $content = @file_get_contents( $path );
+
+    // remove all comment blocks
+    $content = preg_replace( '#/\*.*?\*/#s', '', $content );
+
+    // remove all comment lines
+    $content = preg_replace( '#//(.*)$#m', '', $content );
+
+    // remove all blank spaces
+    $content = preg_replace( '#\s+#', ' ', $content );
+
+    // remove unecessary spaces (before|after) some signs ...
+    $content = str_replace( array('{ ',' {'), '{', $content );
+    $content = str_replace( array('} ',' }'), '}', $content );
+    $content = str_replace( array('; ',' ;'), ';', $content );
+    $content = str_replace( array(': ',' :'), ':', $content );
+    $content = str_replace( array(', ',' ,'), ',', $content );
+    $content = str_replace( array('|| ',' ||'), '||', $content );
+    $content = str_replace( array('! ',' !'), '!', $content );
+
+      // perform different ways to remove some unecesary 
+      // spaces (before|after) some signs ...
+      switch( $this->_type )
+      {
+          case 'css':
+
+              $content = str_replace( array('( ',' ('), '(', $content );
+              $content = str_replace( array(' )'), ')', $content );
+              $content = str_replace( array('= ',' ='), '=', $content );
+
+              break;
+
+          case 'js' :
+
+              $content = str_replace( array('( ',' ('), '(', $content );
+              $content = str_replace( array(' )',') '), ')', $content );
+              $content = str_replace( array('= ',' ='), '=', $content );
+              $content = str_replace( array('+ ',' +'), '+', $content );
+              $content = str_replace( array('- ',' -'), '-', $content );
+              $content = str_replace( array('* ',' *'), '*', $content );
+              $content = str_replace( array('/ ',' /'), '/', $content );
+
+              break;
+      }
+
+    return trim( $content );
+  } // minify  
+
+  /**
+   * Fix all relative paths that are given into file's content.
+   * It's useful when designers provide relative paths for image or additional css files into given css file.
+   * Avoid loose reference for images set in css file.
+   */
+  private function fix_path ( $content = '', $path = '' ) {
+    // first fix path for those references without ../
+    $content = preg_replace('/(url\()(\'|\"){0,1}([a-zA-Z0-9\-\_\.]+)(\.png|\.jpg|\.jpge|\.gif|\.bmp|\.PNG|\.JPG|\.JPEG|\.GIF|\.BMP])/', "$1$2{$path}/$3$4", $content);
+
+    // then, remove last directory from given path to assure ../ will correctly replaced.
+    $path = substr($path, 0, strrpos($path, '/'));
+    $content = preg_replace('/(\.\.\/)/', "{$path}/$2", $content);
+
+    return $content;
+  } // fix_path
+
+  /**
+   * Get a raw JS code and returns it uglified.
+   * This method relies on https://marijnhaverbeke.nl/uglifyjs uglification feature 
+   * which uses Google Closure method.
+   */
+  private function do_uglify ( $raw_code ) {
+    if (!function_exists('curl_init')) {
+      trigger_error('Minifyr: Impossible to uglify your code, this PHP instance does not have CURL.');
+      return $raw_code;
+    }
+
+    $curl = curl_init();
+    $headers = array('application/x-www-form-urlencoded');
+    $body = array( 'js_code' => $raw_code );
+    
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($curl, CURLOPT_FAILONERROR, true);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($curl, CURLOPT_FRESH_CONNECT, true);
+    curl_setopt($curl, CURLOPT_VERBOSE, true);
+    curl_setopt($curl, CURLINFO_HEADER_OUT, true);
+    curl_setopt($curl, CURLOPT_URL, 'https://marijnhaverbeke.nl/uglifyjs');
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($body));
+
+    $uglified = curl_exec($curl);
+    $info = curl_getinfo($curl);
+
+    if ($uglified === false) {
+      $uglified = $raw_code;
+    }
+
+    return $uglified;
+  } // uglify
+
+} // class

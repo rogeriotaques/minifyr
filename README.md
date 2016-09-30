@@ -1,92 +1,108 @@
-# Minifyr 1.8 beta
+# Minifyr 2.0 beta
 
-A PHP script that minify and group CSS and JS scripts.
+Minifies and group CSS or JS scripts.
 
-You may be interested on save bandwith and reduce the load time of your website or application, then, **Minifyr** is good for you.
+If you're interested on save bandwith and reduce the load time of your website or application, then, **Minifyr** is good for you.
 
 From version 1.6 it supports external files and prevent double minification on already minified files.
 
-Many minor bugfixes from this version.
+From version 2.0 it was fully rewriten from a script to a class, which has a more elegant code and is much more flexible with new features.
 
 See the examples below:
 
    [Not minified](http://awin.com.br/assets/css/icomoon.css) |
-   [Minified](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) |
-   [Minified (forcing download)](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen) |
-   [Debug mode](http://awin.com.br/minifyr.php?f=assets/css/icomoon.css&screen&debug)
+   [Minified](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen) |
+   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen) |
+   [Debug mode](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen&debug)
 
 ## How to use
 
-Download this project, copy and paste the "minifyr.php" file into any folder of your project. I strongly
-suggest that you paste it in root directory, this way it becomes easy to refer.
+Fork (or download) this project; Copy and paste the "minifyr.php" file into any folder from your project. This's the class.
 
 For example:
 
+```
+/ (project root directory)
+/ classes/minifyr.php
+/ ...
+```
+
+Now create the script that is gonna use it for minify the resources you need. As an example, create a file called _min.php_ in the 
+root folder of your project, like below:
 
 ```
 / (project root directory)
-/minifyr.php
+/ classes/minifyr.php
+/ min.php
+/ ...
+```
+
+So, you can use the following code to make it happen:
+
+```php
+require_once('classes/minifyr.php');
+
+// get settings and files to minify
+// options are:
+//   f			- Required. File or comma separated file list
+//	 screen	- Optional. Void. Forces the download of minified file.
+// 	 debug	- Optional. Void. When given, skip minification.
+// 
+// @use http://domain.tld/min.php?f=assets/my.css[&screen[&debug]]
+
+$debug  = isset( $_GET[ 'debug' ] ) ? TRUE : FALSE;
+$screen = isset( $_GET[ 'screen' ] ) ? TRUE : FALSE;
+$files  = isset( $_GET[ 'f' ] ) ? $_GET[ 'f' ] : NULL;
+
+$m = new RT\Minifyr($debug, $screen);
+$m->files( explode(',', $files) )
+  ->compression(true)   // can be true/false. enables the gzip compression 
+  ->cache(true)         // can be true/false. enables header for caching 
+  ->uglify(true)        // can be true/false. uglify js codes
+  ->expires('...')      // a string that defines the expiration date
+  ->charset('...')      // the charset. default is utf-8
+  ->files([])           // an array of strings containing files paths
+  ->file('...')         // when only one file, a string with file path 
+  ->render(false);      // renders the output. 
+                        // if a true boolean is given, returns the output as string.
+
 ```
 
 Now, everything you have to do is call it in your HTML file:
 
 ```
-<link type="text/css" media="all" href="minifyr.php?f=path/to/css/file.css" />
+<link type="text/css" media="all" href="min.php?f=path/to/css/file.css" />
 ```
 
 That's it. Easy and simple. A piece of cake! :)
 
 ## Options
 
-There are two options that you can pass via query string:
+These are the options you can pass:
 
-### f: string
+| Option    | Sample | Description |
+| --------- | ------ | ----------  |
+| f      | `min.php?f=file-path.css` | It's the file to be minified. * |
+| screen | `min.php?screen&f=...`    | It's the way to render the content on browser instead return it as a file. |
+| debug  | `min.php?debug&f=...`     | It's a way to don't minify the content. That helps you for debug your codes. |
 
-The path of file you'd like to load and minify.
+### Advanced usage for:
 
-
-```
-minifyr.php?f=assets/css/my-css-file.css
-```
+#### Option `f` : `string`
 
 You can also pass a list of files. In this case, all files will be loaded and will be returned minified as a unique file. This technique is interesting to reduces the number of calls you make to your server.
-
 To pass a list of files, you should give file names separated by comma (,):
 
+E.g:
 ```
-minifyr.php?f=assets/css/my-css-file-1.css,assets/css/my-css-file-2.css,...
-```
-
-Whenever it's necessary to load external files, you can just pass the file with a prefix ```external|```.
-
-```
-minifyr.php?f=external|code.jquery.com/jquery-2.1.1.min.js[, ...]
+min.php?f=assets/css/my-css-file-1.css,assets/css/my-css-file-2.css,...
 ```
 
-### screen: void
+You can also load external resources.
+To do that, just pass the file with a prefix: `external|`.
 
-By default the minified result is returned as a file for your browser.
-
-In case you'd like to get the minified result as string, you should use the *screen* option.
-
-Just add it in the end of your query string:
-
-
+E.g:
 ```
-minifyr.php?f=assets/css/my-css-file.css&screen
+min.php?f=external|code.jquery.com/jquery-2.1.1.min.js[, ...]
 ```
 
-### debug: void
-
-By default all given files are minifies and grouped into one unique file, but, sometimes it's necessary to debug problems with your code and debug mode is to attend it. It's really usefull when minifying javascript files.
-
-In case you'd like to get the result on debug mode, you should use the *debug* option.
-
-Just add it in the end of your query string:
-
-
-```
-minifyr.php?f=assets/css/my-css-file.css&debug
-```
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/rogeriotaques/minifyr/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
