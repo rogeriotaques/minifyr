@@ -10,10 +10,10 @@ From version 2.0 it was fully rewriten from a script to a class, which has a mor
 
 See the examples below:
 
-   [Not minified](http://awin.com.br/assets/css/icomoon.css) |
-   [Minified](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen) |
-   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen) |
-   [Debug mode](http://awin.com.br/minifyr/sample.php?f=../assets/css/icomoon.css&screen&debug)
+   [Not minified](http://awin.com.br/assets/css/main.css) |
+   [Minified](http://awin.com.br/minifyr/sample.php?f=../assets/css/main.css&screen) |
+   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=../assets/css/main.css&screen) |
+   [Debug mode](http://awin.com.br/minifyr/sample.php?f=../assets/css/main.css&screen&debug)
 
 ## How to use
 
