@@ -70,7 +70,7 @@ $m->files( explode(',', $files) )
 
 Now, everything you have to do is call it in your HTML file:
 
-```
+```html
 <link type="text/css" media="all" href="min.php?f=path/to/css/file.css" />
 ```
 
