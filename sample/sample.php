@@ -1,6 +1,6 @@
 <?php 
 
-require_once('minifyr.php');
+require_once('../minifyr.php');
 
 // get settings and files to minify
 // options are:

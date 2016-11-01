@@ -1,4 +1,6 @@
-# Minifyr 2.0 beta
+# Minifyr
+
+[![Latest Version](https://img.shields.io/github/release/rogeriotaques/minifyr.svg)](https://github.com/rogeriotaques/minifyr/releases)
 
 Minifies and group CSS or JS scripts.
 
@@ -10,7 +12,7 @@ From version 2.0 it was fully rewriten from a script to a class, which has a mor
 
 See the examples below:
 
-   [Not minified](https://raw.githubusercontent.com/driftyco/ionicons/master/css/ionicons.css) |
+   [Not minified](http://awin.com.br/minifyr/sample.css) |
    [Minified](http://awin.com.br/minifyr/sample.php?f=sample.css&screen) |
    [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=sample.css) |
    [Debug mode](http://awin.com.br/minifyr/sample.php?f=sample.css&screen&debug)
@@ -21,7 +23,7 @@ Fork (or download) this project; Copy and paste the "minifyr.php" file into any 
 
 For example:
 
-```
+```bash
 / (project root directory)
 / classes/minifyr.php
 / ...
@@ -30,7 +32,7 @@ For example:
 Now create the script that is gonna use it for minify the resources you need. As an example, create a file called _min.php_ in the 
 root folder of your project, like below:
 
-```
+```bash
 / (project root directory)
 / classes/minifyr.php
 / min.php
