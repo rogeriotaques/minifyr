@@ -4,22 +4,14 @@
 
 Minifies and group CSS or JS scripts.
 
-If you're interested on save bandwith and reduce the load time of your website or application, then, **Minifyr** is good for you.
-
-From version 1.6 it supports external files and prevent double minification on already minified files.
-
-From version 2.0 it was fully rewriten from a script to a class, which has a more elegant code and is much more flexible with new features.
-
-See the examples below:
-
-   [Not minified](http://awin.com.br/minifyr/sample.css) |
-   [Minified](http://awin.com.br/minifyr/sample.php?f=sample.css&screen) |
-   [Minified (forcing download)](http://awin.com.br/minifyr/sample.php?f=sample.css) |
-   [Debug mode](http://awin.com.br/minifyr/sample.php?f=sample.css&screen&debug)
+If you're interested on save bandwith, reduce the load time and speed up your website or web application, 
+then, **Minifyr** is good for you.
 
 ## How to use
 
-Fork (or download) this project; Copy and paste the "minifyr.php" file into any folder from your project. This's the class.
+Fork (or download) this project; 
+
+Copy and paste the "minifyr.php" file into any folder from your project. This's the class.
 
 For example:
 
@@ -29,8 +21,9 @@ For example:
 / ...
 ```
 
-Now create the script that is gonna use it for minify the resources you need. As an example, create a file called _min.php_ in the 
-root folder of your project, like below:
+Now create the script that is gonna use it for minify the resources you need. 
+
+As an example, create a file called _min.php_ in the root folder of your project, like below:
 
 ```bash
 / (project root directory)
@@ -107,4 +100,11 @@ E.g:
 ```
 min.php?f=external|code.jquery.com/jquery-2.1.1.min.js[, ...]
 ```
+
+## Changelog
+
+1.6 Added support for external files. Prevent double minification on already minified files.
+
+2.0 Refactored from a "script mode" to a "class mode". New features added.
+
 
